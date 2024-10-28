@@ -32,7 +32,7 @@ Make your changes and commit them (git commit -m 'Add new query').
 Push to the branch (git push origin feature/YourFeature).
 Open a pull request.
 📞 Contact
-For any questions or feedback, feel free to reach out to Juaco directly at [juaco@example.com].
+For any questions or feedback, feel free to reach out to Juaco directly at [jbezanilla@betterfly.com].
 
 🌟 Acknowledgements
 Thanks to the entire Finance team for your hard work and dedication. Together, we can ensure our data is as robust and insightful as possible!
