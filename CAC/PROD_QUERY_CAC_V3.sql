@@ -141,4 +141,4 @@ END AS cac_tag
 
 FROM cac_distribucion_2 CAC_distribuido)
 
-SELECT * FROM cac_final_sinfiltro ------ Elegir columnas a mano con tal de hacer una tabla más limpia
+SELECT * FROM cac_final_sinfiltro ------ Elegir columnas a mano con tal de hacer una tabla más limpia.
