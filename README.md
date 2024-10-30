@@ -23,6 +23,7 @@ To get started with the Finance Department's Data Warehouse:
 Navigate to the Queries: Explore the /queries folder to find the SQL scripts you need.
 
 Run the Queries: Follow the documentation in /documentation to execute the queries effectively.
+Remember, you need acces to 1SOT (also known as Juan Soto) and to the finance-sandbox. If you're not allowed to use these projects, you probably shouldln't be here!
 
 👥 Contributing
 We welcome contributions from all team members! If you have queries to add or improvements to suggest, please follow these steps:
