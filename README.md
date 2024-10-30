@@ -8,7 +8,7 @@ This repository, lovingly curated by **Juaco**, our query master, is dedicated t
 
 ## 📂 Directory Structure
 
-- **/CAC**: Contains SQL queries used to create and manipulate our databases. At the moment, we have the cac antiguo and cac nuevo.
+- **/CAC**: Contains SQL queries used to create and manipulate our databases. At the moment, we have the cac antiguo and cac nuevo. Rememember, a CAC calculation has 2 main components. Expenses and new members!
 - **/Expenses**: Contains the only query we use to transform **expenses_base** in to **cubo_financiero**.
 - **/Revenues**: At the moment, we've got 2 main querys. Revenue_Cubo is used to classify, analyze and QA'ing each provision/invoice. Buildups query is used to create revenues with the buildups structure with a much less detailed view.
 - **/Rewards**: We've got 2 specific Querys. This are both intended to add specific revenue lines to seperate Rewards Revenue tables. This makes sure Revenue_Cubo (updates) grabs this revenues from the revenue_rewards_co_mx table.
