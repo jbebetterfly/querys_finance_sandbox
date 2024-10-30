@@ -1,4 +1,6 @@
-with global as (SELECT 
+with 
+global_pre_check as (
+  SELECT DISTINCT
   EXTRACT(MONTH FROM hs_closed_date) AS closed_date_month,
   EXTRACT(YEAR FROM hs_closed_date) AS closed_date_year,
   hs_betterfly_country,
@@ -10,7 +12,8 @@ with global as (SELECT
   WHEN lower(hs_company_size) = 'big enterprise' THEN 'Enterprise'
   END AS bu,
   hs_number_of_employees,
-  hs_closed_amount_in_company_currency
+  hs_closed_amount_in_company_currency,
+  hs_deal_id
   
   FROM `btf-source-of-truth.acquisition.deals`
 
@@ -39,9 +42,29 @@ with global as (SELECT
     and lower(hs_value_proposition) not in ('affinity') 
     and lower(hs_betterfly_country) not in ('spain')
   
-  ORDER BY hs_closed_date,
+  ORDER BY closed_date_month,
+  closed_date_year,
   hs_betterfly_country,
-  hs_company_size,
+  bu,
+  hs_number_of_employees,
+  hs_closed_amount_in_company_currency
+),
+
+global_distinct as 
+(SELECT 
+  closed_date_month,
+  closed_date_year,
+  hs_betterfly_country,
+  bu,
+  hs_number_of_employees,
+  hs_closed_amount_in_company_currency
+  
+  FROM global_pre_check
+
+  ORDER BY closed_date_month,
+  closed_date_year,
+  hs_betterfly_country,
+  bu,
   hs_number_of_employees,
   hs_closed_amount_in_company_currency),
 
@@ -90,7 +113,7 @@ with global as (SELECT
             AND UPPER(hs_deal_stage) like '%CLOSED WON%'
 
             ORDER by hs_closed_date),
-            espana_1 AS (
+    espana_1 AS (
             SELECT DISTINCT
             closed_date_month,
             closed_date_year,
@@ -103,7 +126,7 @@ with global as (SELECT
             ORDER BY 
             closed_date_year, closed_date_month)
           
-SELECT * from global
+SELECT * from global_distinct
 UNION ALL
 SELECT * from espana_1
 
