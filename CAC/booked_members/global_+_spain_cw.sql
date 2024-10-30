@@ -14,7 +14,7 @@ with global as (SELECT
   
   FROM `btf-source-of-truth.acquisition.deals`
 
-  WHERE hs_closed_date >= '2024-01-01'
+  WHERE hs_closed_date >= '2023-11-01'
   AND hs_deal_Stage = 'Cierres ganados'
   --AND UPPER(hs_company_name) NOT LIKE '%COLSUBSIDIO%'
   AND (lower(hs_product_modules) not in (
@@ -73,7 +73,7 @@ with global as (SELECT
             inner join last_date_esp as ld on ad.hs_deal_id = ld.hs_deal_id
             AND ad.hs_last_modified_date = ld.last_date
         WHERE
-            hs_closed_date >= '2024-01-01'
+            hs_closed_date >= '2023-11-01'
             and hs_created_date <= current_date() -1
             and LOWER(hs_deal_pipeline) LIKE '%flexoh%'
             and (lower(hs_value_proposition) not in ('affinity') or lower(hs_value_proposition) is null)
@@ -87,7 +87,7 @@ with global as (SELECT
             and (lower(hs_development_type) not like '%retention%'or hs_development_type is null)
             and (lower(hs_value_proposition) not like '%customer_engagement%'or hs_value_proposition is null)
             and (lower(hs_partnership_demand_name) not like '%colsubsidio%' or hs_partnership_demand_name is null)
-            AND upper(hs_deal_stage) like '%CLOSED WON%'
+            AND UPPER(hs_deal_stage) like '%CLOSED WON%'
 
             ORDER by hs_closed_date),
             espana_1 AS (
