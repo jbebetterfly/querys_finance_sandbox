@@ -5,8 +5,8 @@ global_pre_check as (
   EXTRACT(YEAR FROM hs_closed_date) AS closed_date_year,
   hs_betterfly_country,
   CASE
-  WHEN lower(hs_company_size) = 'micro' THEN 'SME'
-  WHEN lower(hs_company_size) = 'sme' THEN 'SME'
+  WHEN lower(hs_company_size) = 'micro' THEN 'SMB'
+  WHEN lower(hs_company_size) = 'sme' THEN 'SMB'
   WHEN lower(hs_company_size) = 'corporate' THEN 'Enterprise'
   WHEN lower(hs_company_size) = 'enterprise' THEN 'Enterprise'
   WHEN lower(hs_company_size) = 'big enterprise' THEN 'Enterprise'
@@ -83,8 +83,8 @@ global_distinct as
   EXTRACT(YEAR FROM hs_closed_date) AS closed_date_year,
   hs_betterfly_country,
   CASE
-  WHEN lower(hs_company_size) = 'micro' THEN 'SME'
-  WHEN lower(hs_company_size) = 'sme' THEN 'SME'
+  WHEN lower(hs_company_size) = 'micro' THEN 'SMB'
+  WHEN lower(hs_company_size) = 'sme' THEN 'SMB'
   WHEN lower(hs_company_size) = 'corporate' THEN 'Enterprise'
   WHEN lower(hs_company_size) = 'enterprise' THEN 'Enterprise'
   WHEN lower(hs_company_size) = 'big enterprise' THEN 'Enterprise'
@@ -124,7 +124,10 @@ global_distinct as
             from espana where bu is not null
 
             ORDER BY 
-            closed_date_year, closed_date_month)
+            closed_date_year, closed_date_month),
+          
+          
+          final_final as (
           
 SELECT * from global_distinct
 UNION ALL
@@ -133,4 +136,6 @@ SELECT * from espana_1
 ORDER BY 
 closed_date_year,
 closed_date_month,
-hs_betterfly_country
+hs_betterfly_country)
+
+SELECT * FROM final_final WHERE hs_closed_amount_in_company_currency > 0 AND hs_number_of_employees > 0
