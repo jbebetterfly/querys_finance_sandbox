@@ -1,4 +1,4 @@
-WITH revenue_rewards_colombia AS (
+WITH revenue_rewards_mexico AS (
 SELECT 
 "0" AS document_number, --1
 business_partner_id AS tax_id_client,--2
@@ -30,8 +30,8 @@ month, --27
 year, --28
 "Facturado" AS document_status --29
 FROM `btf-finance-sandbox.Expenses.Cubo_Financiero`
-WHERE source = 'Cierre Colombia X-2024'
-AND accounting_account_id = '4101006'
+WHERE source = 'Cierre Mexico X-2024'
+AND accounting_account_id = '41010203'
 
 )
 
