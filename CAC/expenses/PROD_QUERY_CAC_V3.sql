@@ -126,9 +126,9 @@ cac_final_sinfiltro AS (
         -- Definición de `sub_type` según las condiciones
         CASE
             WHEN management_account_name IN ('Paid Media', 'Merchandising', 'Others', 'Memberships', 'Referral Incentives') THEN 'demand'
-            WHEN management_account_name IN ('Event','Events') AND management_department IN ('Marketing') THEN 'demand'
+            WHEN management_account_name IN ('Event','Events','Others') AND management_department IN ('Marketing') THEN 'demand'
             WHEN management_account_name IN ('Incentives', 'Free Month', 'Free trial', 'Free Trial', 'Merchandising', 'Others') THEN 'conversion'
-            WHEN management_account_name IN ('Event','Events') AND management_department = 'Sales' THEN 'conversion'
+            WHEN management_account_name IN ('Event','Events', 'Others') AND management_department = 'Sales' THEN 'conversion'
             WHEN management_account_name = 'Travels' AND management_department = 'Sales' THEN 'conversion'
             WHEN management_account_name = 'Payroll' AND management_department IN ('Marketing', 'Sales') THEN 'payroll'
             WHEN management_account_name IN ('Severance','Benefits') THEN 'payroll'
