@@ -158,7 +158,7 @@ revenue_cubo_spain AS (
 
 revenue_historico_non_subs AS (
   SELECT *
-  FROM `btf-finance-sandbox.Revenues_historicos.revenues_historicos_non_subs`
+  FROM `btf-finance-sandbox.Revenues_historicos.revenues_historicos_non_subs_2023_static`
 ),
 
 conecten AS (
@@ -211,8 +211,8 @@ WHERE relacionadas = 0
 revenues_historicos_non_subs_ps as (
   SELECT
   document_number as document_number, --1
-  legal_client_id as tax_id_client, --2
-  legal_client_name as client_legal_name, --3
+  tax_id_client, --2
+  client_legal_name, --3
   invoice_description as invoice_description, --4
   document_type as document_type, --5
   revenue_stream as revenue_stream, --6
@@ -220,12 +220,12 @@ revenues_historicos_non_subs_ps as (
   quantity_charged as quantity_charged, --8
   value_lc as value_lc, --9
   local_currency as local_currency, --10
-  service_date as full_date, --11
+  full_date, --11
   'Real' as version, --12
   0 as arpu, --13 
   '' as client_segment, --14
   '' as holding_id, --15
-  legal_client_name as holding_name, --16
+  holding_name, --16
   '' as sponsor, --17
   CAST('1899-12-01' as DATETIME) as holding_cohort, --18
   legal_entity_country as service_country, --19
@@ -239,13 +239,13 @@ revenues_historicos_non_subs_ps as (
   tc.Value as fx_value_bdg,
   safe_divide(historicos_non_subs_ps.value_lc,tc.Value) as value_usd_bdg,
   'Historicos_non_subs' as source,
-  EXTRACT(MONTH FROM historicos_non_subs_ps.service_date) as month,
-  EXTRACT(YEAR FROM historicos_non_subs_ps.service_date) as year,
+  EXTRACT(MONTH FROM historicos_non_subs_ps.full_date) as month,
+  EXTRACT(YEAR FROM historicos_non_subs_ps.full_date) as year,
   'Facturado' AS document_status
 
-  FROM `btf-finance-sandbox.Revenues_historicos.ps_historicos` historicos_non_subs_ps
+  FROM `btf-finance-sandbox.Revenues_historicos.ps_historicos_static` historicos_non_subs_ps
   LEFT JOIN `btf-finance-sandbox.Budget.Currency_conversion_bdg` tc
-  ON CAST(EXTRACT(YEAR FROM historicos_non_subs_ps.service_date) as string) = tc.Year
+  ON CAST(EXTRACT(YEAR FROM historicos_non_subs_ps.full_date) as string) = tc.Year
   AND historicos_non_subs_ps.local_currency = tc.Currency
 ),
 
@@ -286,5 +286,5 @@ service_country,
 value_usd_bdg
  from
 revenue_cubo_consolidado 
-WHERE revenue_stream IS NOT NULL
+WHERE revenue_stream = 'EB'
 ORDER BY year,month,revenue_stream,tax_id_client
