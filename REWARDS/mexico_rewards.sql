@@ -35,4 +35,4 @@ AND accounting_account_id = '41010203'
 
 )
 
-select * from revenue_rewards_colombia
+select * from revenue_rewards_mexico
