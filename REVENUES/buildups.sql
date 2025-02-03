@@ -282,6 +282,7 @@ calculated_revenue AS (
    WHEN invoice_number = 1 AND members_bop < members THEN members - members_bop
    WHEN invoice_number = 2 AND members_bop > 0 AND members_bop < members THEN members - members_bop
    WHEN invoice_number = 2 AND members_bop = 0 AND members_bop2 > 0 AND members_bop2 < members THEN members - members_bop2
+   WHEN invoice_number = 2 AND members_bop = 0 AND members_bop2 = 0 AND members > members_bop THEN members
    ELSE 0
   END AS members_new,
   CASE
