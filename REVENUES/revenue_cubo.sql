@@ -5,7 +5,22 @@
 
 WITH 
 merge_operaciones AS(
-  SELECT * FROM `btf-source-of-truth.cubo.ingresos_operaciones` 
+  SELECT document_number,
+document_date, 
+legal_client_id, 
+legal_client_name, 
+invoice_description,	
+document_type,	
+canceled_document,	
+revenue_stream,	
+quantity_charged,	
+value_lc,	
+local_currency, 
+service_date, 
+legal_entity_country, 
+sponsor, 
+product 
+FROM `btf-source-of-truth.cubo.ingresos_operaciones` 
   UNION ALL SELECT * FROM `btf-finance-sandbox.Revenues_historicos.revenues_historicos` WHERE (legal_client_id IS NOT NULL OR legal_client_id != '') -- revenues 2023
   UNION ALL SELECT * FROM `btf-finance-sandbox.Revenues_historicos.revenues_historicos_pre_2022` WHERE (legal_client_id IS NOT NULL OR legal_client_id != '') -- revenues 2022 y anteriores
   UNION ALL SELECT * FROM `btf-finance-sandbox.Revenue.temp-fix_ingresos-ops` -- parches para diferencias con facturas de holdings
