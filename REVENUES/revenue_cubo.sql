@@ -184,7 +184,7 @@ CASE WHEN business_partner_name LIKE "%BETTERFLY CHILE%" OR business_partner_nam
 ELSE 0
 END AS relacionadas
 FROM `btf-finance-sandbox.Expenses.Cubo_Financiero`
-WHERE legal_entity_name = "Conecten" and management_account_name = "Revenue" 
+WHERE legal_entity_name = "Conecten" and management_account_name = "Revenue" AND subversion = 'REAL'
 
 ),
 
