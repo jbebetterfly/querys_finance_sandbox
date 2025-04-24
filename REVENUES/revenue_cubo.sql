@@ -19,11 +19,12 @@ local_currency,
 service_date, 
 legal_entity_country, 
 sponsor, 
-product 
+product,
+contract_plan_id
 FROM `btf-source-of-truth.cubo.ingresos_operaciones` 
-  UNION ALL SELECT * FROM `btf-finance-sandbox.Revenues_historicos.revenues_historicos` WHERE (legal_client_id IS NOT NULL OR legal_client_id != '') -- revenues 2023
-  UNION ALL SELECT * FROM `btf-finance-sandbox.Revenues_historicos.revenues_historicos_pre_2022` WHERE (legal_client_id IS NOT NULL OR legal_client_id != '') -- revenues 2022 y anteriores
-  UNION ALL SELECT * FROM `btf-finance-sandbox.Revenue.temp-fix_ingresos-ops` -- parches para diferencias con facturas de holdings
+  UNION ALL SELECT *, '' as contract_plan_id FROM `btf-finance-sandbox.Revenues_historicos.revenues_historicos` WHERE (legal_client_id IS NOT NULL OR legal_client_id != '') -- revenues 2023
+  UNION ALL SELECT *, '' as contract_plan_id FROM `btf-finance-sandbox.Revenues_historicos.revenues_historicos_pre_2022` WHERE (legal_client_id IS NOT NULL OR legal_client_id != '') -- revenues 2022 y anteriores
+  UNION ALL SELECT *, '' as contract_plan_id FROM `btf-finance-sandbox.Revenue.temp-fix_ingresos-ops` -- parches para diferencias con facturas de holdings
 ),
 
 holdings_new as (
@@ -107,6 +108,7 @@ SELECT
     WHEN document_type in ('Invoice', 'Credit Note', 'Bill') THEN 1 END) 
     OVER (PARTITION BY holdings.holding_name, ingresos_operaciones.service_date,ingresos_operaciones.revenue_stream)
   AS document_binary,
+  contract_plan_id
 
 FROM merge_operaciones AS ingresos_operaciones
 
@@ -158,7 +160,8 @@ year,
 CASE
   WHEN document_binary = 0 THEN 'Provisionado'
   ELSE 'Facturado' 
-END AS document_status
+END AS document_status,
+contract_plan_id
 FROM revenue_document_check 
 WHERE 
   (document_binary = 1 AND document_type in ('Invoice','Bill','Credit Note')) 
@@ -272,15 +275,15 @@ revenue_rewards_otros AS (
 revenue_cubo_consolidado AS (
   SELECT * FROM revenue_cubo
   UNION ALL
-  SELECT * FROM revenue_cubo_spain
+  SELECT *, '' as contract_plan_id FROM revenue_cubo_spain
   UNION ALL
-  SELECT * FROM revenue_historico_non_subs
+  SELECT *, '' as contract_plan_id FROM revenue_historico_non_subs
   UNION ALL
-  SELECT * FROM revenue_conecten_2024
+  SELECT *, '' as contract_plan_id FROM revenue_conecten_2024
   UNION ALL
-  SELECT * FROM revenues_historicos_non_subs_ps
+  SELECT *, '' as contract_plan_id FROM revenues_historicos_non_subs_ps
   UNION ALL
-  SELECT * FROM revenue_rewards_otros
+  SELECT *, '' as contract_plan_id FROM revenue_rewards_otros
 )
 
 
