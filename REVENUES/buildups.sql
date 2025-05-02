@@ -87,6 +87,8 @@ SELECT
   END AS legal_entity_name,
   'Direct' as sales_channel,
   CASE
+    WHEN ingresos_operaciones.revenue_stream = 'EB' AND product = 'S.C' THEN ingresos_operaciones.product
+    WHEN ingresos_operaciones.revenue_stream = 'EB' AND product = 'S.C cargas' THEN ingresos_operaciones.product
     WHEN ingresos_operaciones.revenue_stream = 'EB' THEN 'EB-XX-1'
     WHEN ingresos_operaciones.revenue_stream = 'CB' THEN ingresos_operaciones.product
   END AS product,
