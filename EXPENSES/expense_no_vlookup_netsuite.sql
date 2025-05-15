@@ -50,11 +50,13 @@ EXTRACT(YEAR FROM gastos_base.full_date) as year
 FROM `btf-finance-sandbox.Expenses.expenses_base_netsuite` gastos_base
 LEFT JOIN `btf-finance-sandbox.relaciones_netsuite.relaciones_cuenta` relacion_cuentas
 ON gastos_base.accounting_account_id = relacion_cuentas.accounting_account_id
-AND UPPER(gastos_base.legal_entity_name) = UPPER(relacion_cuentas.legal_entity_name)
+
+--AND UPPER(gastos_base.legal_entity_name) = UPPER(relacion_cuentas.legal_entity_name) #### Ya no es necesario
 
 LEFT JOIN `btf-finance-sandbox.relaciones_netsuite.relaciones_area` relacion_cecos
 ON UPPER(gastos_base.accounting_department_name) = UPPER(relacion_cecos.accounting_department_name)
-AND UPPER(gastos_base.legal_entity_name) = UPPER(relacion_cecos.legal_entity_name)
+
+--AND UPPER(gastos_base.legal_entity_name) = UPPER(relacion_cecos.legal_entity_name) #### Ya no es necesario
 
 LEFT JOIN `btf-finance-sandbox.Relacion_Motores.relacion_ceco_dim2` relacion_cecos_dim2
 ON UPPER(gastos_base.accounting_country_name) = UPPER(relacion_cecos_dim2.accounting_cost_center_dim2_name)
