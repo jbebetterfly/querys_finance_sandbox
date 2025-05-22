@@ -24,6 +24,7 @@ gastos_base.legal_entity_country,
 gastos_base.legal_entity_name,
 CASE
 WHEN gastos_base.segment_name IS NULL OR gastos_base.segment_name = '' THEN 'Sin holding'
+WHEN gastos_base.segment_name = 'SME' THEN 'SMB'
 ELSE gastos_base.segment_name
 END AS holding_segment,
 relacion_cecos.sales_channel,
