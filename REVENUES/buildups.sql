@@ -369,6 +369,7 @@ calculated_revenue AS (
 --- aqui empezamos a contar los logos wohoo 2
   CASE
    WHEN value_lc_bop IS NULL THEN 0
+   WHEN invoice_number < 0 THEN 0
    ELSE 1
   END AS logo_bop,
   CASE
