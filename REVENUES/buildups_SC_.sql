@@ -20,6 +20,7 @@ sponsor,
 product 
 FROM `btf-source-of-truth.cubo.ingresos_operaciones`
 WHERE product in ('S.C', 'S.C cargas')
+AND contract_plan_id != '102851'
   UNION ALL SELECT
 document_number,
 document_date,
@@ -36,7 +37,8 @@ service_date,
 legal_entity_country,
 sponsor,
 product FROM `btf-finance-sandbox.Revenue.temp-fix_ingresos-ops` -- parches para diferencias con facturas de holdings y otros
-WHERE product in ('S.C', 'S.C cargas') 
+WHERE product in ('S.C', 'S.C cargas')
+AND contract_plan_id != '102851'
 ),
 holdings_new as (
   SELECT DISTINCT
@@ -418,6 +420,7 @@ logo_new,
 logo_churn,
 CASE 
 WHEN full_date < holding_cohort THEN 0
+WHEN product = 'S.C cargas' THEN 0
 ELSE CAST (1 AS INT64) END AS logo_eop,
 
 FROM calculated_revenue
