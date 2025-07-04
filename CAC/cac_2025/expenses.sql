@@ -10,11 +10,6 @@ management_account_name,
 business_partner_name,
 sum(value_usd_bdg) as value_usd_bdg
 
-
-
-
-
-
 FROM `btf-finance-sandbox.Expenses.Cubo_Financiero`
 
 
@@ -22,6 +17,53 @@ WHERE
 year >= 2024
 AND department_classification = 'S&M'
 AND management_account_name NOT IN ('Non-Operational', 'Uncollectible Accounts', 'Payroll', 'Severance', 'Intercompany')
+AND business_partner_name NOT IN (
+'Chubb',
+'Vida Security',
+'Bono Asistencia',
+'Gerty',
+'Metlife',
+'Icatu',
+'Coomeva',
+'Interseguro',
+'Que Plan',
+'Mawdy',
+'Busuu',
+'Hanufit',
+'Celmedia',		
+'Teledoc',
+'Legal Chile',
+'MuvPass',
+'Everhealth',
+'Meeting Lawyers',
+'Griky',
+'Instafit',
+'Pura Mente',
+'Headspace',
+'BenefitHub',
+'Rufy',
+'Zen'	,
+'Jardines del Valle',
+'Total Pass',
+'Clube Ben'	,
+'Wited',
+'Betterfly',
+'Conexa',
+'BigBox',
+'Doc 24',		
+'Udemy',
+'Monkey Fit',
+'Fiton',
+'Gift Point',
+'Medismart',
+'Almamedis',
+'Market Care',
+'Pharma Benefits',
+'Bettercoins',
+'Amazon',
+'Microsoft',
+'Google Cloud'
+)
 
 GROUP BY
 year,
