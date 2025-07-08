@@ -16,7 +16,7 @@ FROM `btf-finance-sandbox.Expenses.Cubo_Financiero`
 WHERE
 year >= 2024
 AND department_classification = 'S&M'
-AND management_account_name NOT IN ('Non-Operational', 'Uncollectible Accounts', 'Payroll', 'Severance', 'Intercompany')
+AND management_account_name NOT IN ('Non-Operational', 'Uncollectible Accounts', 'Payroll', 'Severance', 'Intercompany', 'Benefits')
 AND business_partner_name NOT IN (
 'Chubb',
 'Vida Security',
