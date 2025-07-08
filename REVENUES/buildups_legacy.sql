@@ -1,4 +1,4 @@
--------BUILDUPS ESPECÍFICAMENTE PARA S.C Y S.C CARGAS
+-------BUILDUPS ESPECÍFICAMENTE PARA LEGACY
 
 
 WITH 
@@ -19,7 +19,7 @@ legal_entity_country,
 sponsor, 
 product 
 FROM `btf-source-of-truth.cubo.ingresos_operaciones`
-WHERE product NOT IN ('S.C', 'S.C cargas')
+WHERE (product NOT IN ('S.C', 'S.C cargas') OR product IS NULL)
 
   UNION ALL SELECT
 document_number,
@@ -37,7 +37,7 @@ service_date,
 legal_entity_country,
 sponsor,
 product FROM `btf-finance-sandbox.Revenue.temp-fix_ingresos-ops` -- parches para diferencias con facturas de holdings y otros
-WHERE product NOT IN ('S.C', 'S.C cargas')
+WHERE (product NOT IN ('S.C', 'S.C cargas') OR product IS NULL)
 
 ),
 holdings_new as (
@@ -427,5 +427,5 @@ FROM calculated_revenue
 
 ORDER BY holding_name, holding_cohort, year, month
 
--------BUILDUPS ESPECÍFICAMENTE PARA S.C Y S.C CARGAS
+-------BUILDUPS ESPECÍFICAMENTE PARA LEGACY
 ----- PENDIENTE ARREGLAR LO DE LOS LOGOS EN LAS LÍNEAS DE CARGAS
