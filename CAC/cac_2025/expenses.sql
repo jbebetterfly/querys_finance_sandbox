@@ -16,6 +16,7 @@ FROM `btf-finance-sandbox.Expenses.Cubo_Financiero`
 WHERE
 year >= 2024
 AND department_classification = 'S&M'
+AND management_department != 'Success'
 AND management_account_name NOT IN ('Non-Operational', 'Uncollectible Accounts', 'Payroll', 'Severance', 'Intercompany', 'Benefits')
 AND business_partner_name NOT IN (
 'Chubb',
@@ -127,7 +128,7 @@ ON fg.o_service_country = dhq.o_service_country
 
 WHERE
 year >= 2025
-AND fg.o_service_country = 'HQ'
+--AND fg.o_service_country = 'HQ'
 
 
 

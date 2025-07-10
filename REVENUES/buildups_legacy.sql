@@ -183,9 +183,15 @@ WHERE
 
 ORDER by holding_name, full_date
 ),
+revenue_cubo_spain AS (
+  SELECT * FROM `btf-finance-sandbox.Revenue.Revenue_Cubo_Spain`
+  ORDER BY holding_name, full_date
+),
 
 revenue_cubo_consolidado AS (
   SELECT * FROM revenue_cubo
+  UNION ALL
+  SELECT * FROM revenue_cubo_spain
 ),
 
 revenue_cubo_jb AS (
