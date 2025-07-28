@@ -14,10 +14,12 @@ FROM `btf-finance-sandbox.Expenses.Cubo_Financiero`
 
 
 WHERE
-year >= 2024
-AND department_classification = 'S&M'
+mgmt_account_subclasification = 'SG&A'
+AND year >= 2024
+AND department_classification = 'S&M' -- Incluímos Insurance ??
 AND management_department != 'Success'
-AND management_account_name NOT IN ('Non-Operational', 'Uncollectible Accounts', 'Payroll', 'Severance', 'Intercompany', 'Benefits')
+AND management_account_name NOT IN ('Non-Operational', 'Uncollectible Accounts', 'Payroll', 'Severance', 'Intercompany', 'Benefits', 'Professional Services')
+-- Agregamos valor de professional services a mano. 350$ por país
 AND business_partner_name NOT IN (
 'Chubb',
 'Vida Security',
@@ -105,9 +107,32 @@ distribucion_hq AS (
   SELECT 'CO','CO', 1
   UNION ALL
   SELECT 'PE','PE', 1
-)
+),
 
+professional_services as (
+  SELECT 'CL' as o_service_country, 'CL' as f_service_country, 'Marketing' as management_department, 'Professional Services' as management_account_name, 'Diseñadores' as business_partner_name, 350 as original_value, 350 as value_usd_distr
+  UNION ALL
+  SELECT 'MX' as o_service_country, 'MX' as f_service_country, 'Marketing' as management_department, 'Professional Services' as management_account_name, 'Diseñadores' as business_partner_name, 350 as original_value, 350 as value_usd_distr
+  UNION ALL
+  SELECT 'ES' as o_service_country, 'ES' as f_service_country, 'Marketing' as management_department, 'Professional Services' as management_account_name, 'Diseñadores' as business_partner_name, 350 as original_value, 350 as value_usd_distr
+),
 
+meses_hasta_ahora as (
+  SELECT DISTINCT
+  year, month, 'Professional Services' as ps
+  FROM first_extract_gastos
+),
+
+join_meses_ps as (
+  SELECT year, month, o_service_country, f_service_country, management_department, management_Account_name, business_partner_name, original_value, value_usd_distr
+  FROM meses_hasta_ahora
+  LEFT JOIN
+  professional_services
+  on meses_hasta_ahora.ps = professional_services.management_account_name
+  WHERE year >= 2025
+),
+
+gastos_distribuidos as (
 SELECT 
 
 year,
@@ -128,9 +153,17 @@ ON fg.o_service_country = dhq.o_service_country
 
 WHERE
 year >= 2025
---AND fg.o_service_country = 'HQ'
-
-
+AND (management_account_name = 'Digital Tools' AND business_partner_name in (
+  'EMAIL HIPPO',
+'TREBBLE',
+'AIRCALL',
+'STRIPO',
+'GOLDCAST',
+'HOOTSUITE',
+'APOLLO',
+'LINKEDIN IRELAND UNLIMITED COMPANY'
+) OR management_account_name != 'Digital Tools')
+--AND fg.o_service_country = 'HQ'. filtro para QA distribución
 
 GROUP BY
 year,
@@ -140,5 +173,13 @@ f_service_country,
 management_department,
 management_account_name,
 business_partner_name,
-percentage
+percentage)
+
+SELECT * FROM gastos_distribuidos
+UNION ALL
+SELECT * from join_meses_ps
+
+
+ORDER by year DESC, month DESC, original_value ASC
+
 

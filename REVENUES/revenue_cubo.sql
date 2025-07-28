@@ -21,7 +21,7 @@ legal_entity_country,
 sponsor, 
 product,
 contract_plan_id
-FROM `btf-source-of-truth.cubo.ingresos_operaciones` WHERE service_country != 'ES'
+FROM `btf-source-of-truth.cubo.ingresos_operaciones` WHERE legal_entity_country != 'ES'
   UNION ALL SELECT *, '' as contract_plan_id FROM `btf-finance-sandbox.Revenues_historicos.revenues_historicos` WHERE (legal_client_id IS NOT NULL OR legal_client_id != '') -- revenues 2023
   UNION ALL SELECT *, '' as contract_plan_id FROM `btf-finance-sandbox.Revenues_historicos.revenues_historicos_pre_2022` WHERE (legal_client_id IS NOT NULL OR legal_client_id != '') -- revenues 2022 y anteriores
   UNION ALL SELECT * FROM `btf-finance-sandbox.Revenue.temp-fix_ingresos-ops` -- parches para diferencias con facturas de holdings
