@@ -129,7 +129,7 @@ join_meses_ps as (
   LEFT JOIN
   professional_services
   on meses_hasta_ahora.ps = professional_services.management_account_name
-  WHERE year >= 2025
+  --WHERE year >= 2025
 ),
 
 gastos_distribuidos as (
@@ -152,8 +152,9 @@ ON fg.o_service_country = dhq.o_service_country
 
 
 WHERE
-year >= 2025
-AND (management_account_name = 'Digital Tools' AND business_partner_name in (
+--year >= 2025
+--AND 
+(management_account_name = 'Digital Tools' AND business_partner_name in (
   'EMAIL HIPPO',
 'TREBBLE',
 'AIRCALL',
