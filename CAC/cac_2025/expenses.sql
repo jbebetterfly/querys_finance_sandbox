@@ -16,9 +16,9 @@ FROM `btf-finance-sandbox.Expenses.Cubo_Financiero`
 WHERE
 mgmt_account_subclasification = 'SG&A'
 AND year >= 2024
-AND department_classification = 'S&M' -- Incluímos Insurance ??
-AND management_department != 'Success'
-AND management_account_name NOT IN ('Non-Operational', 'Uncollectible Accounts', 'Payroll', 'Severance', 'Intercompany', 'Benefits', 'Professional Services')
+AND department_classification = 'S&M'
+AND management_department NOT IN ('Success', 'Insurance')
+AND management_account_name NOT IN ('Non-Operational', 'Uncollectible Accounts', 'Payroll', 'Severance', 'Intercompany', 'Benefits', 'Travels')
 -- Agregamos valor de professional services a mano. 350$ por país
 AND business_partner_name NOT IN (
 'Chubb',
@@ -154,7 +154,7 @@ ON fg.o_service_country = dhq.o_service_country
 WHERE
 --year >= 2025
 --AND 
-(management_account_name = 'Digital Tools' AND business_partner_name in (
+(management_account_name IN ('Professional Services', 'Digital Tools') AND business_partner_name in (
   'EMAIL HIPPO',
 'TREBBLE',
 'AIRCALL',
@@ -162,8 +162,9 @@ WHERE
 'GOLDCAST',
 'HOOTSUITE',
 'APOLLO',
-'LINKEDIN IRELAND UNLIMITED COMPANY'
-) OR management_account_name != 'Digital Tools')
+'LINKEDIN IRELAND UNLIMITED COMPANY',
+'WINCLAP'
+) OR management_account_name NOT IN ('Digital Tools', 'Professional Services'))
 --AND fg.o_service_country = 'HQ'. filtro para QA distribución
 
 GROUP BY
