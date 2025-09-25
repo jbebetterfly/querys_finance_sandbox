@@ -119,6 +119,7 @@ from `btf-finance-sandbox.Expenses.Cubo_Financiero`
 where year >= 2025
 and mgmt_account_classification = 'P&L'
 and mgmt_account_subclasification = 'SG&A'
+AND version = 'REAL' AND subversion = 'REAL'
 and management_account_name NOT IN ('Non-Operational','Uncollectible Accounts')
 AND transaction_detail NOT IN (
   'Anulacion asiento volteado 175812'
