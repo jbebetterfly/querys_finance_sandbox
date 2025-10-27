@@ -32,9 +32,10 @@ WITH calendar as (
       cal.date,
       mv.client_country_code,
       mv.client_size,
+      mv.monthly_active_users,
       mv.onboarded_members,
       mv.total_members,
-      mv.monthly_active_users
+      
 
     FROM calendar cal
     INNER JOIN metrics_value mv
