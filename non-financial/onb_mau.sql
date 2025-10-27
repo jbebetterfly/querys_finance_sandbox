@@ -13,25 +13,25 @@ WITH calendar as (
     metrics_value as (
       SELECT
         DATE_TRUNC(date_start, MONTH) as date,
-        country_code,
-        company_size,
-        sum(count_members_onboarding) as onboarded_members,
-        sum(count_members_total) as total_members,
-        sum(mau) as monthly_active_users
+        client_country_code,
+        client_size,
+        sum(onboarding_users) as onboarded_members,
+        sum(total_users) as total_members,
+        sum(total_user_mau) as monthly_active_users
 
       FROM
-        `btf-unified-data-platform.ir_metrics.clients_members_and_mau`
+        `btf-unified-data-platform.ir_metrics.general_metrics_by_client`
 
       GROUP BY
       date,
-      country_code,
-      company_size
+      client_country_code,
+      client_size
     )
 
     SELECT
       cal.date,
-      mv.country_code,
-      mv.company_size,
+      mv.client_country_code,
+      mv.client_size,
       mv.onboarded_members,
       mv.total_members,
       mv.monthly_active_users
@@ -40,6 +40,6 @@ WITH calendar as (
     INNER JOIN metrics_value mv
     on cal.date = mv.date
     
-    WHERE (company_size IS NOT NULL OR country_code IS NOT NULL)
+    WHERE (client_size IS NOT NULL OR client_country_code IS NOT NULL)
 
     ORDER by date asc
