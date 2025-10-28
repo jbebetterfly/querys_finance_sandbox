@@ -14,33 +14,44 @@ WITH calendar as (
       SELECT
         DATE_TRUNC(date_start, MONTH) as date,
         client_country_code,
-        client_size,
+        business_type,
+        CASE
+        WHEN client_size in ('corporate','enterprise') THEN 'enterprise'
+        WHEN client_size in ('micro','sme') THEN 'sme'
+        ELSE 'check' END
+        AS client_size,
+        sum(total_user_mau) as monthly_active_users,
         sum(onboarding_users) as onboarded_members,
-        sum(total_users) as total_members,
-        sum(total_user_mau) as monthly_active_users
+        sum(total_users) as total_members
+        
 
       FROM
         `btf-unified-data-platform.ir_metrics.general_metrics_by_client`
 
+      WHERE NOT REGEXP_CONTAINS(LOWER(COALESCE(client_name, '')), r'(demo|prueba|trial|test)')
+
       GROUP BY
       date,
       client_country_code,
+      business_type,
       client_size
     )
 
     SELECT
       cal.date,
       mv.client_country_code,
+      business_type,
       mv.client_size,
-      mv.monthly_active_users,
       mv.onboarded_members,
       mv.total_members,
-      
+      mv.monthly_active_users
 
     FROM calendar cal
     INNER JOIN metrics_value mv
     on cal.date = mv.date
     
-    WHERE (client_size IS NOT NULL OR client_country_code IS NOT NULL)
+    WHERE (client_size IS NOT NULL AND client_country_code IS NOT NULL AND client_size IS NOT NULL)
+    AND client_country_code in ('CL', 'MX', 'ES')
+    
 
-    ORDER by date asc
+    ORDER by date asc, client_country_code, client_size
