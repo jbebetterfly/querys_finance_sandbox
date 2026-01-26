@@ -38,7 +38,6 @@ legal_entity_country,
 sponsor,
 product FROM `btf-finance-sandbox.Revenue.temp-fix_ingresos-ops` -- parches para diferencias con facturas de holdings y otros
 WHERE product in ('S.C', 'S.C cargas')
-AND contract_plan_id != '102851'
 ),
 holdings_new as (
   SELECT DISTINCT
