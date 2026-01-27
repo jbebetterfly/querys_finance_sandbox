@@ -20,7 +20,7 @@ sponsor,
 product 
 FROM `btf-source-of-truth.cubo.ingresos_operaciones`
 WHERE product in ('S.C', 'S.C cargas')
-AND contract_plan_id != '102851'
+
   UNION ALL SELECT
 document_number,
 document_date,
