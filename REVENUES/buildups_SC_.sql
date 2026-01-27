@@ -1,18 +1,15 @@
--------BUILDUPS ESPECÍFICAMENTE PARA S.C Y S.C CARGAS
-
-
 WITH 
 merge_operaciones AS(
   SELECT document_number,
 document_date, 
 legal_client_id, 
 legal_client_name, 
-invoice_description,	
-document_type,	
-canceled_document,	
-revenue_stream,	
-quantity_charged,	
-value_lc,	
+invoice_description,    
+document_type,  
+canceled_document,  
+revenue_stream, 
+quantity_charged,   
+value_lc,   
 local_currency, 
 service_date, 
 legal_entity_country, 
@@ -20,7 +17,6 @@ sponsor,
 product 
 FROM `btf-source-of-truth.cubo.ingresos_operaciones`
 WHERE product in ('S.C', 'S.C cargas')
-
   UNION ALL SELECT
 document_number,
 document_date,
@@ -36,7 +32,7 @@ local_currency,
 service_date,
 legal_entity_country,
 sponsor,
-product FROM `btf-finance-sandbox.Revenue.temp-fix_ingresos-ops` -- parches para diferencias con facturas de holdings y otros
+product FROM `btf-finance-sandbox.Revenue.temp-fix_ingresos-ops`
 WHERE product in ('S.C', 'S.C cargas')
 ),
 holdings_new as (
@@ -48,7 +44,6 @@ holdings_new as (
   client_segment,
   business_unit,
   holding_cohort
-
   FROM `btf-finance-sandbox.Holdings.holdings_new`
 ),
 revenue_document_check AS
@@ -62,12 +57,10 @@ SELECT
   ingresos_operaciones.revenue_stream,
   ingresos_operaciones.document_type as type,
   ingresos_operaciones.quantity_charged,
-  --- AQUI AJUSTAMOS EL INGRESO DE BRAZIL POR EL TAX DE APROX 12%
   CASE
     WHEN ingresos_operaciones.local_currency = "BRL" THEN ingresos_operaciones.value_lc*0.88
     ELSE ingresos_operaciones.value_lc
   END AS value_lc,
-  ----
   ingresos_operaciones.local_currency,
   ingresos_operaciones.service_date as full_date,
   'Real' as version,
@@ -122,26 +115,19 @@ SELECT
     WHEN document_type in ('Invoice', 'Credit Note', 'Bill') THEN 1 END) 
     OVER (PARTITION BY holdings.holding_name, ingresos_operaciones.service_date,ingresos_operaciones.revenue_stream,ingresos_operaciones.legal_entity_country)
   AS document_binary,
-
 FROM merge_operaciones AS ingresos_operaciones
-
 LEFT JOIN holdings_new holdings
   ON UPPER(REPLACE(REPLACE(ingresos_operaciones.legal_client_id, '.', ''), '-', '')) = UPPER(REPLACE(REPLACE(holdings.tax_id_client, '.', ''), '-', ''))
   AND ingresos_operaciones.revenue_stream = holdings.revenue_stream
   AND ingresos_operaciones.legal_entity_country = holdings.service_country
-
 LEFT JOIN `btf-finance-sandbox.Budget.Currency_conversion_bdg` fx
   ON CAST(EXTRACT(YEAR FROM ingresos_operaciones.service_date) as string) = fx.Year
   AND ingresos_operaciones.local_currency = fx.Currency
-
 WHERE 
   ingresos_operaciones.revenue_stream != 'Betterflyer' 
   AND document_type != 'Free'
-
 ),
-
 revenue_cubo AS (
-
 SELECT 
 document_number,
 tax_id_client,
@@ -179,14 +165,11 @@ FROM revenue_document_check
 WHERE 
   (document_binary = 1 AND document_type in ('Invoice','Bill','Credit Note')) 
   OR (document_binary = 0 and document_type in ('Provision', 'Provision write-off'))
-
 ORDER by holding_name, full_date
 ),
-
 revenue_cubo_consolidado AS (
   SELECT * FROM revenue_cubo
 ),
-
 revenue_cubo_jb AS (
   SELECT 
   full_date,
@@ -204,7 +187,6 @@ revenue_cubo_jb AS (
     sum(value_usd_bdg) as value_usd_bdg,
     sum(quantity_charged) as quantity_charged
     FROM revenue_cubo_consolidado
-
     GROUP BY 
     full_date,
     year, 
@@ -217,12 +199,10 @@ revenue_cubo_jb AS (
     sponsor,
     product,
     revenue_stream
-
 ),
 revenue_cubo_jb_2 AS (
   SELECT * FROM revenue_cubo_jb WHERE value_lc != 0
 ),
-
 revenue_cubo_no_gaps as (
   select * from gap_fill(TABLE revenue_cubo_jb_2,
 ts_column => ('full_date'),
@@ -235,10 +215,7 @@ value_columns => [
   ]
 )
 ),
---- PASO 2: calcular variacion mensual
-
 revenue AS (
-
   SELECT  
     full_date,
     EXTRACT(YEAR FROM full_date) as year, 
@@ -254,13 +231,9 @@ revenue AS (
     COALESCE(SUM(value_lc),0) AS value_lc,
     COALESCE(SUM(quantity_charged),0) AS members,
     COALESCE(SUM(value_usd_bdg),0) AS value_usd_bdg,
-
 FROM revenue_cubo_no_gaps
-
 WHERE revenue_stream in ("EB","CB","Otro negocio") and holding_name != ""
-
 GROUP BY 
-
 full_date,
 year, 
 month,
@@ -272,8 +245,7 @@ sponsor,
 product,
 local_currency),
 
-revenue_base AS 
-
+revenue_base_temp AS 
 ( 
 SELECT
   full_date,
@@ -297,16 +269,23 @@ SELECT
   LEAD(value_usd_bdg) OVER(PARTITION BY holding_name,revenue_stream, service_country,sponsor, product ORDER BY EXTRACT(YEAR FROM full_date), EXTRACT(MONTH FROM full_date)) AS next_period_value_usd,
   COALESCE(LAG(members,2) OVER(PARTITION BY holding_name,revenue_stream,service_country,sponsor, product ORDER BY EXTRACT(YEAR FROM full_date), EXTRACT(MONTH FROM full_date)), 0) AS members_bop2,
   COALESCE(LAG(value_lc,2) OVER(PARTITION BY holding_name,revenue_stream, service_country,sponsor, product ORDER BY EXTRACT(YEAR FROM full_date), EXTRACT(MONTH FROM full_date)),0) AS value_lc_bop2,
-  COALESCE(LAG(value_usd_bdg,2) OVER(PARTITION BY holding_name,revenue_stream, service_country,sponsor, product ORDER BY EXTRACT(YEAR FROM full_date), EXTRACT(MONTH FROM full_date)),0) AS value_usd_bop2,
-
+  COALESCE(LAG(value_usd_bdg,2) OVER(PARTITION BY holding_name,revenue_stream, service_country,sponsor, product ORDER BY EXTRACT(YEAR FROM full_date), EXTRACT(MONTH FROM full_date)),0) AS value_usd_bop2
+  
 FROM revenue
-
 ),
-
+revenue_base AS (
+SELECT
+  rbt.*,
+  MAX(CASE WHEN rbt.product = 'S.C' THEN rbt.next_period_value_usd ELSE NULL END) 
+    OVER (PARTITION BY rbt.holding_name, rbt.revenue_stream, rbt.service_country, rbt.sponsor, rbt.full_date) AS next_period_value_usd_sc,
+  MAX(CASE WHEN rbt.product = 'S.C' THEN rbt.next_period_value_lc ELSE NULL END) 
+    OVER (PARTITION BY rbt.holding_name, rbt.revenue_stream, rbt.service_country, rbt.sponsor, rbt.full_date) AS next_period_value_lc_sc,  
+  MAX(CASE WHEN rbt.product = 'S.C' THEN rbt.next_period_members ELSE NULL END) 
+    OVER (PARTITION BY rbt.holding_name, rbt.revenue_stream, rbt.service_country, rbt.sponsor, rbt.full_date) AS next_period_sc_members
+FROM revenue_base_temp rbt
+),
 calculated_revenue AS (
   SELECT *,
---- aqui members
-
   CASE
    WHEN invoice_number = 0 THEN members
    WHEN invoice_number = 1 AND members_bop < members THEN members - members_bop
@@ -323,10 +302,10 @@ calculated_revenue AS (
    ELSE 0
   END AS members_retention,
   CASE
-   WHEN next_period_members IS NULL THEN members
+   WHEN product = 'S.C' AND next_period_members IS NULL THEN members
+   WHEN product = 'S.C cargas' AND next_period_sc_members IS NULL THEN members
    ELSE 0
   END AS members_churn,
-  --- aqui empezamos a contar los revenues whohooo
   CASE
    WHEN invoice_number = 0 THEN value_lc
    WHEN invoice_number = 1 AND value_lc_bop < value_lc THEN value_lc - value_lc_bop
@@ -342,7 +321,10 @@ calculated_revenue AS (
    ELSE 0
   END AS value_lc_retention,
   CASE
-   WHEN next_period_value_lc IS NULL THEN value_lc
+   WHEN product = 'S.C' AND value_lc < 0 AND next_period_value_lc IS NULL THEN 0 
+   WHEN product = 'S.C' AND next_period_value_lc IS NULL THEN value_lc
+   WHEN product = 'S.C cargas' AND value_lc < 0 AND next_period_value_lc_sc IS NULL THEN 0
+   WHEN product = 'S.C cargas' AND next_period_value_lc_sc IS NULL THEN value_lc
    ELSE 0
   END AS value_lc_churn,
   CASE
@@ -360,11 +342,12 @@ calculated_revenue AS (
    ELSE 0
   END AS value_usd_retention,
   CASE
-   WHEN value_usd_bdg < 0 AND next_period_value_usd IS NULL THEN 0 
-   WHEN next_period_value_usd IS NULL THEN value_usd_bdg
+   WHEN product = 'S.C' AND value_usd_bdg < 0 AND next_period_value_usd IS NULL THEN 0 
+   WHEN product = 'S.C' AND next_period_value_usd IS NULL THEN value_usd_bdg
+   WHEN product = 'S.C cargas' AND value_usd_bdg < 0 AND next_period_value_usd_sc IS NULL THEN 0
+   WHEN product = 'S.C cargas' AND next_period_value_usd_sc IS NULL THEN value_usd_bdg
    ELSE 0
   END AS value_usd_churn,
---- aqui empezamos a contar los logos wohoo 2
   CASE
    WHEN value_lc_bop IS NULL THEN 0
    WHEN invoice_number < 0 THEN 0
@@ -376,15 +359,13 @@ calculated_revenue AS (
    ELSE 0
   END AS logo_new,
   CASE
-   WHEN next_period_value_lc IS NULL AND product != 'S.C cargas' THEN 1
+   WHEN product = 'S.C' AND next_period_value_lc IS NULL THEN 1
+   WHEN product = 'S.C cargas' THEN 0
    ELSE 0
   END AS logo_churn
-
   FROM revenue_base
 )
-
 SELECT 
-
 full_date,
 EXTRACT(YEAR from full_date) as year,
 EXTRACT(MONTH from full_date) as month,
@@ -420,11 +401,6 @@ logo_churn,
 CASE 
 WHEN full_date < holding_cohort THEN 0
 WHEN product = 'S.C cargas' THEN 0
-ELSE CAST (1 AS INT64) END AS logo_eop,
-
+ELSE CAST (1 AS INT64) END AS logo_eop
 FROM calculated_revenue
-
 ORDER BY holding_name, holding_cohort, year, month
-
--------BUILDUPS ESPECÍFICAMENTE PARA S.C Y S.C CARGAS
------ PENDIENTE ARREGLAR LO DE LOS LOGOS EN LAS LÍNEAS DE CARGAS
