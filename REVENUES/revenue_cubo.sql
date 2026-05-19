@@ -105,7 +105,7 @@ SELECT
   EXTRACT(YEAR FROM ingresos_operaciones.service_date) as year,
   MAX(
     CASE
-    WHEN document_type = 'Provision' THEN 0
+    WHEN document_type IN ('Provision', 'Provision write-off') THEN 0
     WHEN document_type in ('Invoice', 'Credit Note', 'Bill') THEN 1 END) 
     OVER (PARTITION BY holdings.holding_name, ingresos_operaciones.service_date,ingresos_operaciones.revenue_stream)
   AS document_binary,
@@ -166,7 +166,7 @@ contract_plan_id
 FROM revenue_document_check 
 WHERE 
   (document_binary = 1 AND document_type in ('Invoice','Bill','Credit Note')) 
-  OR (document_binary = 0 and document_type = 'Provision') 
+  OR (document_binary = 0 and document_type IN ('Provision', 'Provision write-off')) 
 
 ORDER by holding_name, full_date
 ),
