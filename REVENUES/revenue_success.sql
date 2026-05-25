@@ -32,56 +32,82 @@ merge_operaciones AS (
         legal_client_id, legal_client_name, document_type, revenue_stream,
         quantity_charged, value_lc, local_currency, service_date, legal_entity_country
     FROM `btf-finance-sandbox.Revenue.temp-fix_ingresos-ops`
+),
+
+revenue_with_doc_check AS (
+    SELECT
+        ops.service_date,
+        ops.legal_client_id,
+        ops.legal_client_name,
+        ops.document_type,
+        ops.revenue_stream,
+        ops.quantity_charged,
+        ops.value_lc,
+        ops.local_currency,
+        ops.legal_entity_country,
+        h.holding_name,
+        h.client_segment,
+        fx.Value                                                         AS fx_value,
+
+        MAX(CASE
+            WHEN ops.document_type IN ('Provision', 'Provision write-off') THEN 0
+            WHEN ops.document_type IN ('Invoice', 'Credit Note', 'Bill')   THEN 1
+        END) OVER (
+            PARTITION BY h.holding_name, ops.service_date,
+                         ops.revenue_stream, ops.legal_entity_country
+        )                                                                AS document_binary
+
+    FROM merge_operaciones ops
+
+    LEFT JOIN `btf-finance-sandbox.Holdings.holdings_new` h
+           ON UPPER(REPLACE(REPLACE(ops.legal_client_id, '.', ''), '-', ''))
+            = UPPER(REPLACE(REPLACE(h.tax_id_client, '.', ''), '-', ''))
+          AND ops.revenue_stream      = h.revenue_stream
+          AND ops.legal_entity_country = h.service_country
+
+    LEFT JOIN `btf-finance-sandbox.Budget.Currency_conversion_bdg` fx
+           ON CAST(EXTRACT(YEAR FROM ops.service_date) AS STRING) = fx.Year
+          AND ops.local_currency = fx.Currency
+
+    WHERE ops.revenue_stream != 'Betterflyer'
+      AND ops.document_type  != 'Free'
 )
 
 SELECT
-    ops.service_date,
-    h.holding_name,
-    h.client_segment                                             AS holding_size,
-    REPLACE(REPLACE(ops.legal_client_id, '.', ''), '-', '')      AS tax_id,
-    ops.legal_client_name                                        AS company_name,
-    ops.legal_entity_country                                     AS country,
-    ops.local_currency                                           AS currency,
-    SUM(ops.quantity_charged)                                     AS quantity,
+    service_date,
+    holding_name,
+    client_segment                                               AS holding_size,
+    REPLACE(REPLACE(legal_client_id, '.', ''), '-', '')          AS tax_id,
+    legal_client_name                                            AS company_name,
+    legal_entity_country                                         AS country,
+    local_currency                                               AS currency,
+    SUM(quantity_charged)                                         AS quantity,
     SUM(CASE
-        WHEN ops.local_currency = 'BRL' THEN ops.value_lc * 0.88
-        ELSE ops.value_lc
+        WHEN local_currency = 'BRL' THEN value_lc * 0.88
+        ELSE value_lc
     END)                                                         AS revenue,
     SAFE_DIVIDE(
-        SUM(CASE WHEN ops.local_currency = 'BRL' THEN ops.value_lc * 0.88 ELSE ops.value_lc END),
-        SUM(ops.quantity_charged)
+        SUM(CASE WHEN local_currency = 'BRL' THEN value_lc * 0.88 ELSE value_lc END),
+        SUM(quantity_charged)
     )                                                            AS arpu,
     SUM(CASE
-        WHEN ops.local_currency = 'BRL' THEN SAFE_DIVIDE(ops.value_lc * 0.88, fx.Value)
-        ELSE SAFE_DIVIDE(ops.value_lc, fx.Value)
+        WHEN local_currency = 'BRL' THEN SAFE_DIVIDE(value_lc * 0.88, fx_value)
+        ELSE SAFE_DIVIDE(value_lc, fx_value)
     END)                                                         AS revenue_usd,
     SAFE_DIVIDE(
-        SUM(CASE WHEN ops.local_currency = 'BRL' THEN SAFE_DIVIDE(ops.value_lc * 0.88, fx.Value) ELSE SAFE_DIVIDE(ops.value_lc, fx.Value) END),
-        SUM(ops.quantity_charged)
+        SUM(CASE WHEN local_currency = 'BRL' THEN SAFE_DIVIDE(value_lc * 0.88, fx_value) ELSE SAFE_DIVIDE(value_lc, fx_value) END),
+        SUM(quantity_charged)
     )                                                            AS arpu_usd
 
-FROM merge_operaciones ops
-
-LEFT JOIN `btf-finance-sandbox.Holdings.holdings_new` h
-       ON UPPER(REPLACE(REPLACE(ops.legal_client_id, '.', ''), '-', ''))
-        = UPPER(REPLACE(REPLACE(h.tax_id_client, '.', ''), '-', ''))
-      AND ops.revenue_stream      = h.revenue_stream
-      AND ops.legal_entity_country = h.service_country
-
-LEFT JOIN `btf-finance-sandbox.Budget.Currency_conversion_bdg` fx
-       ON CAST(EXTRACT(YEAR FROM ops.service_date) AS STRING) = fx.Year
-      AND ops.local_currency = fx.Currency
-
-WHERE ops.revenue_stream != 'Betterflyer'
-  AND ops.document_type  != 'Free'
-  AND service_country IN ('CL', 'MX')
-  AND service_date >= '2025-01-01'
+FROM revenue_with_doc_check
+WHERE (document_binary = 1 AND document_type IN ('Invoice', 'Bill', 'Credit Note'))
+   OR (document_binary = 0 AND document_type IN ('Provision', 'Provision write-off'))
 
 GROUP BY
-    ops.service_date,
-    h.holding_name,
-    h.client_segment,
-    ops.legal_client_id,
-    ops.legal_client_name,
-    ops.legal_entity_country,
-    ops.local_currency
+    service_date,
+    holding_name,
+    client_segment,
+    legal_client_id,
+    legal_client_name,
+    legal_entity_country,
+    local_currency
