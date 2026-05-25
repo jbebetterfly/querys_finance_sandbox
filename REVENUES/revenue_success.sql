@@ -71,6 +71,7 @@ revenue_with_doc_check AS (
 
     WHERE ops.revenue_stream != 'Betterflyer'
       AND ops.document_type  != 'Free'
+      AND ops.legal_entity_country IN ('CL', 'MX')
 )
 
 SELECT
