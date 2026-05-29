@@ -86,12 +86,17 @@ SELECT
     SAFE_DIVIDE(
         SUM(CASE WHEN local_currency = 'BRL' THEN SAFE_DIVIDE(value_lc * 0.88, fx_value) ELSE SAFE_DIVIDE(value_lc, fx_value) END),
         SUM(quantity_charged)
-    )                                                            AS arpu_usd
+    )                                                            AS arpu_usd,
+    SAFE_DIVIDE(
+        SUM(CASE WHEN local_currency = 'BRL' THEN value_lc * 0.88 ELSE value_lc END),
+        SUM(SUM(CASE WHEN local_currency = 'BRL' THEN value_lc * 0.88 ELSE value_lc END))
+            OVER (PARTITION BY service_date, legal_entity_country)
+    )                                                            AS revenue_weight
 
 FROM revenue_with_doc_check
 WHERE ((document_binary = 1 AND document_type IN ('Invoice', 'Bill', 'Credit Note'))
    OR  (document_binary = 0 AND document_type IN ('Provision', 'Provision write-off')))
-AND service_date >= '2025-01-01'
+  AND service_date >= '2025-01-01'
 
 GROUP BY
     service_date,
