@@ -12,26 +12,14 @@ merge_operaciones AS (
         service_date,
         legal_entity_country
     FROM `btf-source-of-truth.cubo.ingresos_operaciones`
-
-    UNION ALL
-    SELECT
-        legal_client_id, legal_client_name, document_type, revenue_stream,
-        quantity_charged, value_lc, local_currency, service_date, legal_entity_country
-    FROM `btf-finance-sandbox.Revenues_historicos.revenues_historicos`
-    WHERE legal_client_id IS NOT NULL OR legal_client_id != ''
-
-    UNION ALL
-    SELECT
-        legal_client_id, legal_client_name, document_type, revenue_stream,
-        quantity_charged, value_lc, local_currency, service_date, legal_entity_country
-    FROM `btf-finance-sandbox.Revenues_historicos.revenues_historicos_pre_2022`
-    WHERE legal_client_id IS NOT NULL OR legal_client_id != ''
+    WHERE revenue_stream = 'EB'
 
     UNION ALL
     SELECT
         legal_client_id, legal_client_name, document_type, revenue_stream,
         quantity_charged, value_lc, local_currency, service_date, legal_entity_country
     FROM `btf-finance-sandbox.Revenue.temp-fix_ingresos-ops`
+    WHERE revenue_stream = 'EB'
 ),
 
 revenue_with_doc_check AS (
@@ -103,6 +91,7 @@ SELECT
 FROM revenue_with_doc_check
 WHERE (document_binary = 1 AND document_type IN ('Invoice', 'Bill', 'Credit Note'))
    OR (document_binary = 0 AND document_type IN ('Provision', 'Provision write-off'))
+AND service_date >= '2025-01-01'
 
 GROUP BY
     service_date,
@@ -112,3 +101,5 @@ GROUP BY
     legal_client_name,
     legal_entity_country,
     local_currency
+
+ORDER BY holding_name, service_date
