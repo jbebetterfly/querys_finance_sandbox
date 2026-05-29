@@ -89,8 +89,8 @@ SELECT
     )                                                            AS arpu_usd
 
 FROM revenue_with_doc_check
-WHERE (document_binary = 1 AND document_type IN ('Invoice', 'Bill', 'Credit Note'))
-   OR (document_binary = 0 AND document_type IN ('Provision', 'Provision write-off'))
+WHERE ((document_binary = 1 AND document_type IN ('Invoice', 'Bill', 'Credit Note'))
+   OR  (document_binary = 0 AND document_type IN ('Provision', 'Provision write-off')))
 AND service_date >= '2025-01-01'
 
 GROUP BY
