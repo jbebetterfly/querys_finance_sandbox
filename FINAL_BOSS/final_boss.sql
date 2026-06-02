@@ -1,6 +1,6 @@
 -- =============================================
--- TABLA CONSOLIDADA P&L v3
--- Fuente revenue: buildups_v2 (con product)
+-- TABLA CONSOLIDADA P&L - VERSIÓN FINAL
+-- Fuentes: buildups_v2 + Cubo_Financiero + Deals
 -- =============================================
 
 WITH buildups AS (
@@ -10,10 +10,10 @@ WITH buildups AS (
         client_segment            AS segment,
         CASE
             WHEN revenue_stream = 'CB' THEN 'CB'
-            WHEN revenue_stream = 'EB' AND product = 'EB-XX-1'                  THEN 'Wellbeing'
-            WHEN revenue_stream = 'EB' AND product IN ('S.C', 'S.C cargas')     THEN 'Health'
-            WHEN revenue_stream = 'EB' AND product = 'IN-XX-1'                  THEN 'Insurance-ES'
-            WHEN revenue_stream = 'EB' AND product = 'VO-XX-1'                  THEN 'Interchange-ES'
+            WHEN revenue_stream = 'EB' AND product = 'EB-XX-1'              THEN 'Wellbeing'
+            WHEN revenue_stream = 'EB' AND product IN ('S.C', 'S.C cargas') THEN 'Health'
+            WHEN revenue_stream = 'EB' AND product = 'IN-XX-1'              THEN 'Insurance-ES'
+            WHEN revenue_stream = 'EB' AND product = 'VO-XX-1'              THEN 'Interchange-ES'
             ELSE revenue_stream
         END                       AS revenue_stream,
         SUM(value_lc_eop)         AS rev_eop_lc,
@@ -33,42 +33,41 @@ WITH buildups AS (
         SUM(members_retention)    AS mem_ret
     FROM `btf-finance-sandbox.Revenue.buildups_v2`
     WHERE year >= 2024
-      AND NOT (revenue_stream = 'EB' AND product IN ('FO-XX-1', 'FALSE'))
     GROUP BY 1, 2, 3, 4
 )
 
--- Revenue (4 métricas con LC y USD)
-SELECT period, country, segment, revenue_stream, 'Revenue_EoP' AS pnl_line, CAST(NULL AS STRING) AS department, rev_eop_lc AS amount_local, rev_eop_usd AS amount_usd FROM buildups
+-- Revenue (LC + USD)
+SELECT period, country, segment, revenue_stream, 'Revenue_EoP'       AS pnl_line, CAST(NULL AS STRING) AS department, rev_eop_lc   AS amount_local, rev_eop_usd   AS amount_usd FROM buildups
 UNION ALL
-SELECT period, country, segment, revenue_stream, 'Revenue_New', NULL, rev_new_lc, rev_new_usd FROM buildups
+SELECT period, country, segment, revenue_stream, 'Revenue_New',       NULL, rev_new_lc,   rev_new_usd   FROM buildups
 UNION ALL
-SELECT period, country, segment, revenue_stream, 'Revenue_Churn', NULL, rev_churn_lc, rev_churn_usd FROM buildups
+SELECT period, country, segment, revenue_stream, 'Revenue_Churn',     NULL, rev_churn_lc, rev_churn_usd FROM buildups
 UNION ALL
-SELECT period, country, segment, revenue_stream, 'Revenue_Retention', NULL, rev_ret_lc, rev_ret_usd FROM buildups
+SELECT period, country, segment, revenue_stream, 'Revenue_Retention', NULL, rev_ret_lc,   rev_ret_usd   FROM buildups
 
 UNION ALL
 
--- Logos (3 métricas, solo conteo, USD = NULL)
-SELECT period, country, segment, revenue_stream, 'Logos_EoP', NULL, CAST(log_eop AS FLOAT64), NULL FROM buildups
+-- Logos (solo conteo, amount_usd = NULL)
+SELECT period, country, segment, revenue_stream, 'Logos_EoP',   NULL, CAST(log_eop   AS FLOAT64), NULL FROM buildups
 UNION ALL
-SELECT period, country, segment, revenue_stream, 'Logos_New', NULL, CAST(log_new AS FLOAT64), NULL FROM buildups
+SELECT period, country, segment, revenue_stream, 'Logos_New',   NULL, CAST(log_new   AS FLOAT64), NULL FROM buildups
 UNION ALL
 SELECT period, country, segment, revenue_stream, 'Logos_Churn', NULL, CAST(log_churn AS FLOAT64), NULL FROM buildups
 
 UNION ALL
 
--- Members (4 métricas, solo conteo, USD = NULL)
-SELECT period, country, segment, revenue_stream, 'Members_EoP', NULL, CAST(mem_eop AS FLOAT64), NULL FROM buildups
+-- Members (solo conteo, amount_usd = NULL)
+SELECT period, country, segment, revenue_stream, 'Members_EoP',       NULL, CAST(mem_eop   AS FLOAT64), NULL FROM buildups
 UNION ALL
-SELECT period, country, segment, revenue_stream, 'Members_New', NULL, CAST(mem_new AS FLOAT64), NULL FROM buildups
+SELECT period, country, segment, revenue_stream, 'Members_New',       NULL, CAST(mem_new   AS FLOAT64), NULL FROM buildups
 UNION ALL
-SELECT period, country, segment, revenue_stream, 'Members_Churn', NULL, CAST(mem_churn AS FLOAT64), NULL FROM buildups
+SELECT period, country, segment, revenue_stream, 'Members_Churn',     NULL, CAST(mem_churn AS FLOAT64), NULL FROM buildups
 UNION ALL
-SELECT period, country, segment, revenue_stream, 'Members_Retention', NULL, CAST(mem_ret AS FLOAT64), NULL FROM buildups
+SELECT period, country, segment, revenue_stream, 'Members_Retention', NULL, CAST(mem_ret   AS FLOAT64), NULL FROM buildups
 
 UNION ALL
 
--- COGS desde Cubo_Financiero
+-- COGS
 SELECT
     DATE(year, month, 1)            AS period,
     service_country                 AS country,
@@ -99,7 +98,7 @@ GROUP BY 1, 2, 3, 4, 6
 
 UNION ALL
 
--- SG&A desde Cubo_Financiero
+-- SG&A
 SELECT
     DATE(year, month, 1)            AS period,
     service_country                 AS country,
@@ -128,3 +127,37 @@ WHERE mgmt_account_subclasification = 'SG&A'
     AND subversion = 'REAL'
     AND year >= 2024
 GROUP BY 1, 2, 3, 4, 6
+
+UNION ALL
+
+-- Booked MRR
+SELECT
+    DATE_TRUNC(close_date, MONTH)   AS period,
+    CASE betterfly_country
+        WHEN 'Chile'  THEN 'CL'
+        WHEN 'Mexico' THEN 'MX'
+        ELSE betterfly_country
+    END                             AS country,
+    CASE deal_size
+        WHEN 'micro' THEN 'Micro'
+        WHEN 'sme'   THEN 'SME'
+        ELSE deal_size
+    END                             AS segment,
+    CASE product_modules
+        WHEN 'Wellbeing'        THEN 'Wellbeing'
+        WHEN 'Seguros de salud' THEN 'Health'
+        WHEN 'Trae tu seguro'  THEN 'Wellbeing'
+        ELSE product_modules
+    END                             AS revenue_stream,
+    'Booked_MRR'                    AS pnl_line,
+    CAST(NULL AS STRING)            AS department,
+    CAST(NULL AS FLOAT64)           AS amount_local,
+    SUM(amount_in_company_currency) AS amount_usd
+FROM `btf-unified-data-platform.pdr_acquisition.deals`
+WHERE close_date >= '2025-01-01'
+    AND deal_stage = 'Cierres ganados'
+    AND betterfly_country IN ('Chile', 'Mexico', 'Spain')
+    AND development_type_use = 'New Logo'
+    AND UPPER(company_name) NOT LIKE '%BETTERF%'
+    AND UPPER(company_name) NOT LIKE '% TEST %'
+GROUP BY 1, 2, 3, 4
