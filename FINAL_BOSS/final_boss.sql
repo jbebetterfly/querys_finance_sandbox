@@ -34,130 +34,140 @@ WITH buildups AS (
     FROM `btf-finance-sandbox.Revenue.buildups_v2`
     WHERE year >= 2024
     GROUP BY 1, 2, 3, 4
+),
+
+revenue AS (
+    SELECT period, country, segment, revenue_stream, 'Revenue_EoP'       AS pnl_line, CAST(NULL AS STRING) AS department, rev_eop_lc   AS amount_local, rev_eop_usd   AS amount_usd FROM buildups
+    UNION ALL
+    SELECT period, country, segment, revenue_stream, 'Revenue_New',       NULL, rev_new_lc,   rev_new_usd   FROM buildups
+    UNION ALL
+    SELECT period, country, segment, revenue_stream, 'Revenue_Churn',     NULL, rev_churn_lc, rev_churn_usd FROM buildups
+    UNION ALL
+    SELECT period, country, segment, revenue_stream, 'Revenue_Retention', NULL, rev_ret_lc,   rev_ret_usd   FROM buildups
+),
+
+logos AS (
+    SELECT period, country, segment, revenue_stream, 'Logos_EoP'   AS pnl_line, CAST(NULL AS STRING) AS department, CAST(log_eop   AS FLOAT64) AS amount_local, CAST(NULL AS FLOAT64) AS amount_usd FROM buildups
+    UNION ALL
+    SELECT period, country, segment, revenue_stream, 'Logos_New',   NULL, CAST(log_new   AS FLOAT64), NULL FROM buildups
+    UNION ALL
+    SELECT period, country, segment, revenue_stream, 'Logos_Churn', NULL, CAST(log_churn AS FLOAT64), NULL FROM buildups
+),
+
+members AS (
+    SELECT period, country, segment, revenue_stream, 'Members_EoP'       AS pnl_line, CAST(NULL AS STRING) AS department, CAST(mem_eop   AS FLOAT64) AS amount_local, CAST(NULL AS FLOAT64) AS amount_usd FROM buildups
+    UNION ALL
+    SELECT period, country, segment, revenue_stream, 'Members_New',       NULL, CAST(mem_new   AS FLOAT64), NULL FROM buildups
+    UNION ALL
+    SELECT period, country, segment, revenue_stream, 'Members_Churn',     NULL, CAST(mem_churn AS FLOAT64), NULL FROM buildups
+    UNION ALL
+    SELECT period, country, segment, revenue_stream, 'Members_Retention', NULL, CAST(mem_ret   AS FLOAT64), NULL FROM buildups
+),
+
+cogs AS (
+    SELECT
+        DATE(year, month, 1)            AS period,
+        service_country                 AS country,
+        CASE holding_segment
+            WHEN 'SMB' THEN 'SME'
+            ELSE holding_segment
+        END                             AS segment,
+        CASE revenue_stream
+            WHEN 'Employee Benefit'  THEN 'EB'
+            WHEN 'Employee Benefits' THEN 'EB'
+            WHEN 'Affinity'          THEN 'CB'
+            ELSE revenue_stream
+        END                             AS revenue_stream,
+        'COGS'                          AS pnl_line,
+        management_department           AS department,
+        SUM(value_lc)                   AS amount_local,
+        SUM(value_usd_bdg)              AS amount_usd
+    FROM `btf-finance-sandbox.Expenses.Cubo_Financiero`
+    WHERE mgmt_account_subclasification = 'COGS'
+        AND management_department = 'Sales'
+        AND holding_segment IN ('SME', 'Enterprise')
+        AND revenue_stream IN ('Employee Benefit', 'Affinity')
+        AND subversion = 'REAL'
+        AND year >= 2024
+        AND management_account_name != 'COGS: Rebate'
+        AND service_country != 'HQ'
+    GROUP BY 1, 2, 3, 4, 6
+),
+
+sga AS (
+    SELECT
+        DATE(year, month, 1)            AS period,
+        service_country                 AS country,
+        CASE holding_segment
+            WHEN 'SMB' THEN 'SME'
+            ELSE holding_segment
+        END                             AS segment,
+        CASE revenue_stream
+            WHEN 'Employee Benefit'  THEN 'EB'
+            WHEN 'Employee Benefits' THEN 'EB'
+            WHEN 'Affinity'          THEN 'CB'
+            ELSE revenue_stream
+        END                             AS revenue_stream,
+        'SGA'                           AS pnl_line,
+        management_department           AS department,
+        SUM(value_lc)                   AS amount_local,
+        SUM(value_usd_bdg)              AS amount_usd
+    FROM `btf-finance-sandbox.Expenses.Cubo_Financiero`
+    WHERE mgmt_account_subclasification = 'SG&A'
+        AND mgmt_account_classification = 'P&L'
+        AND management_account_name NOT IN (
+            'Non-Operational', 'Depreciation',
+            'Severance', 'Uncollectible Accounts'
+        )
+        AND accounting_account_id NOT IN ('Vacaciones al Personal')
+        AND subversion = 'REAL'
+        AND year >= 2024
+    GROUP BY 1, 2, 3, 4, 6
+),
+
+booked_mrr_cl_mx AS (
+    SELECT
+        DATE_TRUNC(close_date, MONTH)   AS period,
+        CASE betterfly_country
+            WHEN 'Chile'  THEN 'CL'
+            WHEN 'Mexico' THEN 'MX'
+        END                             AS country,
+        CASE deal_size
+            WHEN 'micro'          THEN 'Micro'
+            WHEN 'sme'            THEN 'SME'
+            WHEN 'corporate'      THEN 'Corporate'
+            WHEN 'enterprise'     THEN 'Enterprise'
+            WHEN 'big enterprise' THEN 'Enterprise'
+        END                             AS segment,
+        CASE product_modules
+            WHEN 'Wellbeing'        THEN 'Wellbeing'
+            WHEN 'Seguros de salud' THEN 'Health'
+            WHEN 'Trae tu seguro'  THEN 'Wellbeing'
+            ELSE product_modules
+        END                             AS revenue_stream,
+        'Booked_MRR'                    AS pnl_line,
+        CAST(NULL AS STRING)            AS department,
+        CAST(NULL AS FLOAT64)           AS amount_local,
+        SUM(amount_in_company_currency) AS amount_usd
+    FROM `btf-unified-data-platform.pdr_acquisition.deals`
+    WHERE close_date >= '2025-01-01'
+        AND deal_stage = 'Cierres ganados'
+        AND betterfly_country IN ('Chile', 'Mexico')
+        AND development_type_use = 'New Logo'
+        AND UPPER(company_name) NOT LIKE '%BETTERF%'
+        AND UPPER(company_name) NOT LIKE '% TEST %'
+    GROUP BY 1, 2, 3, 4
 )
 
--- Revenue (LC + USD)
-SELECT period, country, segment, revenue_stream, 'Revenue_EoP'       AS pnl_line, CAST(NULL AS STRING) AS department, rev_eop_lc   AS amount_local, rev_eop_usd   AS amount_usd FROM buildups
+-- UNION FINAL
+SELECT * FROM revenue
 UNION ALL
-SELECT period, country, segment, revenue_stream, 'Revenue_New',       NULL, rev_new_lc,   rev_new_usd   FROM buildups
+SELECT * FROM logos
 UNION ALL
-SELECT period, country, segment, revenue_stream, 'Revenue_Churn',     NULL, rev_churn_lc, rev_churn_usd FROM buildups
+SELECT * FROM members
 UNION ALL
-SELECT period, country, segment, revenue_stream, 'Revenue_Retention', NULL, rev_ret_lc,   rev_ret_usd   FROM buildups
-
+SELECT * FROM cogs
 UNION ALL
-
--- Logos (solo conteo, amount_usd = NULL)
-SELECT period, country, segment, revenue_stream, 'Logos_EoP',   NULL, CAST(log_eop   AS FLOAT64), NULL FROM buildups
+SELECT * FROM sga
 UNION ALL
-SELECT period, country, segment, revenue_stream, 'Logos_New',   NULL, CAST(log_new   AS FLOAT64), NULL FROM buildups
-UNION ALL
-SELECT period, country, segment, revenue_stream, 'Logos_Churn', NULL, CAST(log_churn AS FLOAT64), NULL FROM buildups
-
-UNION ALL
-
--- Members (solo conteo, amount_usd = NULL)
-SELECT period, country, segment, revenue_stream, 'Members_EoP',       NULL, CAST(mem_eop   AS FLOAT64), NULL FROM buildups
-UNION ALL
-SELECT period, country, segment, revenue_stream, 'Members_New',       NULL, CAST(mem_new   AS FLOAT64), NULL FROM buildups
-UNION ALL
-SELECT period, country, segment, revenue_stream, 'Members_Churn',     NULL, CAST(mem_churn AS FLOAT64), NULL FROM buildups
-UNION ALL
-SELECT period, country, segment, revenue_stream, 'Members_Retention', NULL, CAST(mem_ret   AS FLOAT64), NULL FROM buildups
-
-UNION ALL
-
--- COGS
-SELECT
-    DATE(year, month, 1)            AS period,
-    service_country                 AS country,
-    CASE holding_segment
-        WHEN 'SMB' THEN 'SME'
-        ELSE holding_segment
-    END                             AS segment,
-    CASE revenue_stream
-        WHEN 'Employee Benefit'  THEN 'EB'
-        WHEN 'Employee Benefits' THEN 'EB'
-        WHEN 'Affinity'          THEN 'CB'
-        ELSE revenue_stream
-    END                             AS revenue_stream,
-    'COGS'                          AS pnl_line,
-    management_department           AS department,
-    SUM(value_lc)                   AS amount_local,
-    SUM(value_usd_bdg)              AS amount_usd
-FROM `btf-finance-sandbox.Expenses.Cubo_Financiero`
-WHERE mgmt_account_subclasification = 'COGS'
-    AND management_department = 'Sales'
-    AND holding_segment IN ('SME', 'Enterprise')
-    AND revenue_stream IN ('Employee Benefit', 'Affinity')
-    AND subversion = 'REAL'
-    AND year >= 2024
-    AND management_account_name != 'COGS: Rebate'
-    AND service_country != 'HQ'
-GROUP BY 1, 2, 3, 4, 6
-
-UNION ALL
-
--- SG&A
-SELECT
-    DATE(year, month, 1)            AS period,
-    service_country                 AS country,
-    CASE holding_segment
-        WHEN 'SMB' THEN 'SME'
-        ELSE holding_segment
-    END                             AS segment,
-    CASE revenue_stream
-        WHEN 'Employee Benefit'  THEN 'EB'
-        WHEN 'Employee Benefits' THEN 'EB'
-        WHEN 'Affinity'          THEN 'CB'
-        ELSE revenue_stream
-    END                             AS revenue_stream,
-    'SGA'                           AS pnl_line,
-    management_department           AS department,
-    SUM(value_lc)                   AS amount_local,
-    SUM(value_usd_bdg)              AS amount_usd
-FROM `btf-finance-sandbox.Expenses.Cubo_Financiero`
-WHERE mgmt_account_subclasification = 'SG&A'
-    AND mgmt_account_classification = 'P&L'
-    AND management_account_name NOT IN (
-        'Non-Operational', 'Depreciation',
-        'Severance', 'Uncollectible Accounts'
-    )
-    AND accounting_account_id NOT IN ('Vacaciones al Personal')
-    AND subversion = 'REAL'
-    AND year >= 2024
-GROUP BY 1, 2, 3, 4, 6
-
-UNION ALL
-
--- Booked MRR
-SELECT
-    DATE_TRUNC(close_date, MONTH)   AS period,
-    CASE betterfly_country
-        WHEN 'Chile'  THEN 'CL'
-        WHEN 'Mexico' THEN 'MX'
-        ELSE betterfly_country
-    END                             AS country,
-    CASE deal_size
-        WHEN 'micro' THEN 'Micro'
-        WHEN 'sme'   THEN 'SME'
-        ELSE deal_size
-    END                             AS segment,
-    CASE product_modules
-        WHEN 'Wellbeing'        THEN 'Wellbeing'
-        WHEN 'Seguros de salud' THEN 'Health'
-        WHEN 'Trae tu seguro'  THEN 'Wellbeing'
-        ELSE product_modules
-    END                             AS revenue_stream,
-    'Booked_MRR'                    AS pnl_line,
-    CAST(NULL AS STRING)            AS department,
-    CAST(NULL AS FLOAT64)           AS amount_local,
-    SUM(amount_in_company_currency) AS amount_usd
-FROM `btf-unified-data-platform.pdr_acquisition.deals`
-WHERE close_date >= '2025-01-01'
-    AND deal_stage = 'Cierres ganados'
-    AND betterfly_country IN ('Chile', 'Mexico', 'Spain')
-    AND development_type_use = 'New Logo'
-    AND UPPER(company_name) NOT LIKE '%BETTERF%'
-    AND UPPER(company_name) NOT LIKE '% TEST %'
-GROUP BY 1, 2, 3, 4
+SELECT * FROM booked_mrr_cl_mx
