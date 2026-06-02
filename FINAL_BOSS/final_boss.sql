@@ -157,6 +157,31 @@ booked_mrr_cl_mx AS (
         AND UPPER(company_name) NOT LIKE '%BETTERF%'
         AND UPPER(company_name) NOT LIKE '% TEST %'
     GROUP BY 1, 2, 3, 4
+),
+
+booked_mrr_es AS (
+    SELECT
+        DATE_TRUNC(close_date, MONTH)   AS period,
+        'ES'                            AS country,
+        CASE deal_size
+            WHEN 'micro'          THEN 'Micro'
+            WHEN 'sme'            THEN 'SME'
+            WHEN 'corporate'      THEN 'Corporate'
+            WHEN 'enterprise'     THEN 'Enterprise'
+            WHEN 'big enterprise' THEN 'Enterprise'
+        END                             AS segment,
+        'EB'                            AS revenue_stream,
+        'Booked_MRR'                    AS pnl_line,
+        CAST(NULL AS STRING)            AS department,
+        CAST(NULL AS FLOAT64)           AS amount_local,
+        SUM(amount_in_company_currency) AS amount_usd
+    FROM `btf-unified-data-platform.pdr_acquisition.deals`
+    WHERE close_date >= '2025-01-01'
+        AND deal_stage = 'Closed Won - 100%'
+        AND betterfly_country = 'Spain'
+        AND product_modules NOT IN ('Desarrollo de plataforma (Flexoh)', 'Gift Cards')
+        AND product_modules NOT LIKE '%Gift Cards%'
+    GROUP BY 1, 3
 )
 
 -- UNION FINAL
@@ -171,3 +196,5 @@ UNION ALL
 SELECT * FROM sga
 UNION ALL
 SELECT * FROM booked_mrr_cl_mx
+UNION ALL
+SELECT * FROM booked_mrr_es
