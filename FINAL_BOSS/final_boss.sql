@@ -1,6 +1,6 @@
 -- =============================================
 -- TABLA CONSOLIDADA P&L - VERSIÓN FINAL
--- Fuentes: buildups_v2 + Cubo_Financiero + Deals
+-- Fuentes: buildups_v2 + Cubo_Financiero + Deals + Revenue_Cubo
 -- =============================================
 
 WITH buildups AS (
@@ -94,6 +94,25 @@ cogs AS (
     GROUP BY 1, 2, 3, 4, 6
 ),
 
+cogs_fs AS (
+    SELECT
+        DATE(year, month, 1)            AS period,
+        service_country                 AS country,
+        CAST(NULL AS STRING)            AS segment,
+        'FS'                            AS revenue_stream,
+        'COGS'                          AS pnl_line,
+        CAST(NULL AS STRING)            AS department,
+        SUM(value_lc)                   AS amount_local,
+        SUM(value_usd_bdg)              AS amount_usd
+    FROM `btf-finance-sandbox.Expenses.Cubo_Financiero`
+    WHERE mgmt_account_subclasification = 'COGS'
+        AND revenue_stream = 'Rewards'
+        AND subversion = 'REAL'
+        AND version = 'REAL'
+        AND year >= 2025
+    GROUP BY 1, 2
+),
+
 sga AS (
     SELECT
         DATE(year, month, 1)            AS period,
@@ -182,6 +201,22 @@ booked_mrr_es AS (
         AND product_modules NOT IN ('Desarrollo de plataforma (Flexoh)', 'Gift Cards')
         AND product_modules NOT LIKE '%Gift Cards%'
     GROUP BY 1, 3
+),
+
+revenue_fs_otros AS (
+    SELECT
+        DATE(year, month, 1)            AS period,
+        service_country                 AS country,
+        CAST(NULL AS STRING)            AS segment,
+        revenue_stream,
+        'Revenue_EoP'                   AS pnl_line,
+        CAST(NULL AS STRING)            AS department,
+        SUM(value_lc)                   AS amount_local,
+        SUM(value_usd_bdg)              AS amount_usd
+    FROM `btf-finance-sandbox.Revenue.Revenue_Cubo`
+    WHERE revenue_stream IN ('FS', 'Otro negocio')
+        AND year >= 2025
+    GROUP BY 1, 2, 4
 )
 
 -- UNION FINAL
@@ -193,8 +228,12 @@ SELECT * FROM members
 UNION ALL
 SELECT * FROM cogs
 UNION ALL
+SELECT * FROM cogs_fs
+UNION ALL
 SELECT * FROM sga
 UNION ALL
 SELECT * FROM booked_mrr_cl_mx
 UNION ALL
 SELECT * FROM booked_mrr_es
+UNION ALL
+SELECT * FROM revenue_fs_otros
