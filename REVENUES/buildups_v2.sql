@@ -55,7 +55,10 @@ facturas_enriquecidas AS (
   SELECT
     f.document_type,
     f.revenue_stream,
-    f.quantity_charged,
+    -- S.C cargas es add-on de S.C: aporta revenue pero no members
+    CASE WHEN f.product = 'S.C cargas' THEN 0
+         ELSE f.quantity_charged
+    END AS quantity_charged,
     -- Brasil: se descuenta ~12% de tax del valor local
     CASE WHEN f.local_currency = 'BRL' THEN f.value_lc * 0.88
          ELSE f.value_lc
@@ -68,7 +71,7 @@ facturas_enriquecidas AS (
     h.holding_cohort,
     h.client_segment,
     CASE
-      WHEN f.revenue_stream = 'EB' AND f.product IN ('S.C', 'S.C cargas') THEN f.product
+      WHEN f.revenue_stream = 'EB' AND f.product IN ('S.C', 'S.C cargas') THEN 'S.C'
       WHEN f.revenue_stream = 'EB'  THEN 'EB-XX-1'
       WHEN f.revenue_stream = 'CB'  THEN f.product
     END AS product,
@@ -198,7 +201,7 @@ con_periodos AS (
 
   FROM revenue_base
   WINDOW w AS (
-    PARTITION BY holding_name, revenue_stream, service_country, sponsor, product
+    PARTITION BY holding_name, revenue_stream, service_country, sponsor
     ORDER BY EXTRACT(YEAR FROM full_date), EXTRACT(MONTH FROM full_date)
   )
 ),
