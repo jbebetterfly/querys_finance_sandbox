@@ -7,9 +7,7 @@
 ---        → gap_fill mensual → window functions → descomposición
 ---
 --- Owner: Joaquim
---- ---------------------------> RECORDATORIO: Aquí no hay una partición por producto
----                              Esto significa que no analizo el producto para identificar si el logo es nuevo o churn.
----                              Por lo tanto: en tablas de buildups separadas por producto, habrá 1 new en sc y 1 churn en legacy (+1-1=0). Acá sólo habra 0 y 0.
+---
 
 -- ============================================================
 -- 1. FUENTES DE INGRESO: unión de todas las tablas de facturación
@@ -290,7 +288,7 @@ descomposicion AS (
 )
 
 -- ============================================================
--- 8. OUTPUT                      
+-- 8. OUTPUT
 -- ============================================================
 SELECT
   full_date,
