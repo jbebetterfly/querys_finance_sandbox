@@ -1,6 +1,7 @@
 -- =============================================
 -- TABLA CONSOLIDADA P&L - VERSIÓN FINAL
--- Fuentes: buildups_v2 + Cubo_Financiero + Deals + Revenue_Cubo
+-- Fuentes: buildups_v2 + Cubo_Financiero + Deals
+--          + Revenue_Cubo + general_metrics_by_client
 -- =============================================
 
 WITH buildups AS (
@@ -217,6 +218,56 @@ revenue_fs_otros AS (
     WHERE revenue_stream IN ('FS', 'Otro negocio')
         AND year >= 2025
     GROUP BY 1, 2, 4
+),
+
+engagement_base AS (
+    SELECT
+        DATE_TRUNC(date_start, MONTH)   AS period,
+        client_country_code             AS country,
+        CASE
+            WHEN client_size IN ('micro', 'sme')            THEN 'SME'
+            WHEN client_size IN ('corporate', 'enterprise')  THEN 'Enterprise'
+        END                             AS segment,
+        CASE business_type
+            WHEN 'employee_engagement' THEN 'EB'
+            WHEN 'customer_engagement' THEN 'CB'
+        END                             AS revenue_stream,
+        SUM(onboarding_users)           AS onboarded_members,
+        SUM(total_users)                AS total_members,
+        SUM(total_user_mau)             AS monthly_active_users
+    FROM `btf-unified-data-platform.ir_metrics.general_metrics_by_client`
+    WHERE NOT REGEXP_CONTAINS(LOWER(COALESCE(client_name, '')), r'(demo|prueba|trial|test)')
+        AND client_country_code IN ('CL', 'MX', 'ES')
+        AND business_type IN ('employee_engagement', 'customer_engagement')
+        AND client_size IS NOT NULL
+        AND DATE_TRUNC(date_start, MONTH) >= '2024-01-01'
+    GROUP BY 1, 2, 3, 4
+),
+
+onb_rate AS (
+    SELECT
+        period,
+        country,
+        segment,
+        revenue_stream,
+        'ONB_Rate'                      AS pnl_line,
+        CAST(NULL AS STRING)            AS department,
+        SAFE_DIVIDE(onboarded_members, total_members) AS amount_local,
+        CAST(NULL AS FLOAT64)           AS amount_usd
+    FROM engagement_base
+),
+
+mau_rate AS (
+    SELECT
+        period,
+        country,
+        segment,
+        revenue_stream,
+        'MAU_Rate'                      AS pnl_line,
+        CAST(NULL AS STRING)            AS department,
+        SAFE_DIVIDE(monthly_active_users, onboarded_members) AS amount_local,
+        CAST(NULL AS FLOAT64)           AS amount_usd
+    FROM engagement_base
 )
 
 -- UNION FINAL
@@ -237,3 +288,7 @@ UNION ALL
 SELECT * FROM booked_mrr_es
 UNION ALL
 SELECT * FROM revenue_fs_otros
+UNION ALL
+SELECT * FROM onb_rate
+UNION ALL
+SELECT * FROM mau_rate
