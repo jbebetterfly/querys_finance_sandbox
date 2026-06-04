@@ -23,14 +23,15 @@ ORDER by activation_date ASC
 companies as (
   SELECT DISTINCT
   company_id,
-  company_legal_id
+  company_legal_id,
+  company_name
   FROM `btf-unified-data-platform.pdr_acquisition.companies`
 )
 
 SELECT 
 acq.betterfly_country,
-acq.company_id,
 companies.company_legal_id,
+companies.company_name,
 acq.product_modules,
 activation_date
 
