@@ -86,8 +86,11 @@ cogs AS (
     FROM `btf-finance-sandbox.Expenses.Cubo_Financiero`
     WHERE mgmt_account_subclasification = 'COGS'
         AND management_department = 'Sales'
-        AND holding_segment IN ('SME', 'Enterprise')
-        AND revenue_stream IN ('Employee Benefit', 'Affinity')
+        AND (
+            (revenue_stream = 'Employee Benefit' AND holding_segment IN ('SME', 'Enterprise'))
+            OR
+            (revenue_stream = 'Affinity')
+        )
         AND subversion = 'REAL'
         AND year >= 2024
         AND management_account_name != 'COGS: Rebate'
