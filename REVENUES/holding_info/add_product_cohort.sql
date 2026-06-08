@@ -16,7 +16,7 @@ FROM  `btf-unified-data-platform.pdr_acquisition.deals`
 
 WHERE activation_date >= '2026-03-01' ----Editar para acomodar fecha
 AND betterfly_country IN ('Chile', 'Mexico')
-AND development_type_use NOT IN ('Renewal')
+AND development_type_use NOT IN ('Renewal', 'Upside')
 ---------
 ---------
 ---------
