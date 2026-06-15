@@ -24,8 +24,8 @@ relacion_cecos_dim2.service_country,
 gastos_base.legal_entity_country,
 gastos_base.legal_entity_name,
 CASE
-WHEN UPPER(gastos_base.accounting_account_name) LIKE '% SME%' THEN 'SMB'
-WHEN UPPER(gastos_base.accounting_account_name) LIKE '% SMB%' THEN 'SMB'
+WHEN UPPER(gastos_base.accounting_account_name) LIKE '% SME%' THEN 'SME'
+WHEN UPPER(gastos_base.accounting_account_name) LIKE '% SME%' THEN 'SME'
 WHEN UPPER(gastos_base.accounting_account_name) LIKE '%AFFINITY%' THEN 'Affinity'
 WHEN UPPER(gastos_base.accounting_account_name) LIKE '%ENTERPRISE%' THEN 'Enterprise'
 WHEN UPPER(gastos_base.accounting_account_name) LIKE '%BIG CORPS%' THEN 'Enterprise'
