@@ -46,7 +46,7 @@ gastos_base.payment_date,
 gastos_base.source,
 CASE
 WHEN gastos_base.business_partner_name = 'ENTERPRISE' THEN 'Enterprise'
-WHEN gastos_base.business_partner_name = 'SMB' THEN 'SMB'
+WHEN gastos_base.business_partner_name = 'SMB' THEN 'SME'
 ELSE bu.business_unit END AS business_unit,
 EXTRACT(MONTH FROM gastos_base.full_date) as month,
 EXTRACT(YEAR FROM gastos_base.full_date) as year
