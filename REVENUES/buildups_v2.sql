@@ -16,7 +16,7 @@ WITH facturas_raw AS (
   SELECT legal_client_id, legal_client_name, document_type, revenue_stream,
          quantity_charged, value_lc, local_currency, service_date,
          legal_entity_country, sponsor, product
-  FROM `btf-source-of-truth.cubo.ingresos_operaciones`
+  FROM `btf-source-of-truth.cubo.ingresos_operaciones` WHERE legal_entity_country != 'ES'
 
   UNION ALL
   SELECT legal_client_id, legal_client_name, document_type, revenue_stream,
@@ -115,8 +115,10 @@ revenue_conciliado AS (
 ),
 
 -- España viene de una tabla separada
+-- CAMBIO: se imputa por year/month (periodo de servicio) en vez de full_date (fecha de cierre)
 revenue_spain AS (
-  SELECT full_date, service_country, holding_name, holding_cohort,
+  SELECT DATETIME(DATE(year, month, 1)) AS full_date,
+         service_country, holding_name, holding_cohort,
          client_segment, local_currency, sponsor, revenue_stream,
          product, value_lc, value_usd_bdg, quantity_charged
   FROM `btf-finance-sandbox.Revenue.Revenue_Cubo_Spain`
